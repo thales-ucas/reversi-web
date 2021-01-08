@@ -5,6 +5,7 @@ import { EventDispatcher } from 'three';
 const Engine = function(){
   const _this = this;
   let _data = null; // 棋盘数据
+  let _action = null; // 行动方
   /**
    *	初始化
    */
@@ -32,6 +33,11 @@ const Engine = function(){
     _this.move(3, 3, Engine.CHESS.WHITE, true);
     _this.move(4, 3, Engine.CHESS.BLACK, true);
     _this.move(4, 4, Engine.CHESS.WHITE, true);
+    _action = Engine.CHESS.BLACK;
+    const e = { type: Engine.EVENT.START, data: _action };
+    _this.dispatchEvent(e);
+    // const arr = getLegal(Engine.CHESS.BLACK);
+    // console.log(arr);
   };
   /**
    * 获取数据
@@ -49,7 +55,7 @@ const Engine = function(){
   _this.move = (row, col, color, force) => {
     let flips = false;
     if ( !force ) {
-      flips = _this.getFilp(row, col, color);
+      flips = getFilp(row, col, color);
       if(flips) {
         for(const obj of flips) {
           _data[obj.row][obj.col] = color;
@@ -59,11 +65,12 @@ const Engine = function(){
       }
     }
     _data[row][col] = color;
-    const data = { row, col, color, flips };
+    const count = getCount();
+    const data = { row, col, color, flips, count };
     const e = { type: Engine.EVENT.MOVE, data };
     _this.dispatchEvent(e);
   };
-  _this.getFilp = (row, col, color) => {
+  function getFilp(row, col, color) {
     if (_data[row][col] !== 0) {
       return false;
     }
@@ -74,8 +81,8 @@ const Engine = function(){
     const arr = [];
     const opColor = color === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
     const direction = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]];
-    for( const item of direction) {
-      const [ xdirection, ydirection ] = item;
+    for(const coord of direction) {
+      const [ xdirection, ydirection ] = coord;
       let x = parseInt(col);
       let y = parseInt(row);
       x += xdirection;
@@ -84,9 +91,10 @@ const Engine = function(){
         do {
           x += xdirection;
           y += ydirection;  
-          if(isValid(y, x)) break;
+          if(!isValid(y, x)) break;
         } while(_data[y][x] === opColor);
       }
+      if(!isValid(y, x)) continue;
       if(_data[y][x] === color) {
         while (isValid(y, x)) {          
           x -= xdirection;
@@ -102,6 +110,36 @@ const Engine = function(){
     _data[row][col] = 0;
     if(arr.length === 0) return false;
     return arr;
+  }
+  /**
+   * 获取合法点
+   * @param {emun} color 棋色
+   */
+  _this.getLegal = (color) => {
+    const direction = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]];
+    const opColor = color === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
+    const nears = [];
+    for(const m in _data) {
+      for(const n in _data[m]) {
+        if(_data[m][n] === opColor) {
+          for(const coord of direction) {
+            const [ dx, dy ] = coord;
+            let x = parseInt(n) + dx;
+            let y = parseInt(m) + dy;
+            if(isValid(y, x) && _data[y][x]=== Engine.CHESS.NONE && nears.indexOf([x, y]) === -1) {
+              nears.push([x, y]);
+            }
+          }
+        }
+      }
+    }
+    const arr = [];
+    for(const coord of nears) {
+      if(getFilp(coord[1], coord[0], color)) {
+        arr.push(coord);
+      }
+    }
+    return arr;
   };
   /**
    * 在棋盘上
@@ -111,19 +149,41 @@ const Engine = function(){
   function isValid( row, col ) {
     return (row >= 0 && row <= Engine.ROW - 1 && col >= 0 && col <= Engine.COL - 1);
   }
+  /**
+   * 获取统计
+   */
+  function getCount() {
+    const counter = {
+      black: 0,
+      white: 0
+    };
+    for(const row of _data) {
+      for(const col of row) {
+        if(col === Engine.CHESS.BLACK) {
+          counter.black++;
+        } else if(col === Engine.CHESS.WHITE) {
+          counter.white++;
+        }
+      }
+    }
+    return counter;
+  }
   _this.init();
 };
 Engine.ROW = 8;
 Engine.COL = 8;
 Engine.CHESS = {
+  NONE: 0,
   BLACK: 1,
   WHITE: 2
 };
 Engine.EVENT = {
+  START: "gameStart",
+  GAME_OVER: "gameOver",
   MOVE: "chessMove",
   FLIP: "chessFlip"
 };
 
-Object.assign( Engine.prototype, EventDispatcher.prototype);
+Object.assign( Engine.prototype, EventDispatcher.prototype );
 Engine.prototype.constructor = Engine;
 export default Engine;
