@@ -8,7 +8,7 @@ module.exports = {
   css: {
     extract: false
   }, // css文件不分离
-  publicPath: '/', // 根目录
+  publicPath: './', // 根目录
   devServer: {
     port: 3001,
     host: 'localhost'
