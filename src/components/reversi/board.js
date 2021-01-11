@@ -66,19 +66,22 @@ const Board = function() {
     piece.position.z = row * Square.WIDTH;
     piece.name = `${row}-${col}`;
     __chess.add(piece);
+    return piece.move();
   };
   /**
    * 翻转
    * @param {array} arr 
    */
   _this.flip = (arr) => {
+    const list = [];
     if (arr) {
-      for(const obj of arr) {
-        const { row, col } = obj;
+      for(const k in arr) {
+        const { row, col } = arr[k];
         const piece = __chess.getObjectByName(`${row}-${col}`);
-        piece.flip();
+        list.push(piece.flip(parseInt(k) * 500));
       }
     }
+    return Promise.all(list);
   };
 	_this.init();
 };

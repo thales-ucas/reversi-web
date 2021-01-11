@@ -1,4 +1,5 @@
 import { WebGLRenderer, EventDispatcher, PerspectiveCamera, Scene, Color, Raycaster, Vector2 } from 'three';
+import TWEEN from '@tweenjs/tween.js';
 import Board from './board';
 import Engine from './engine';
 import AIPlayer from './ai-player';
@@ -57,7 +58,7 @@ const main = function(container){
     __board.pave(_engine.getData());
     __scene.add( __board );
     __camera.lookAt(__board.position);
-    animate();
+    animate(0);
   };
   _this.start = () => {
     _engine.start();
@@ -94,10 +95,13 @@ const main = function(container){
    */
   function onChessMove(e) {
     const { row, col, color, flips, count } = e.data;
-    __board.move( row, col, color );
-    __board.flip(flips);
-    const event = { type: EVENT.GAME_STEP, data: count};
-    _this.dispatchEvent(event);
+    __board.move( row, col, color ).then(() => {
+      __board.flip(flips).then((arr) => {
+        const event = { type: EVENT.GAME_STEP, data: count};
+        _this.dispatchEvent(event);
+    
+      });
+    });
     if(_running && color === Engine.CHESS.BLACK) {
       _enable = false;
       _ai.think(_engine.getLegal(_ai.getColor()));
@@ -113,8 +117,9 @@ const main = function(container){
     const { row, col, color } = e.data;
     _engine.move(row, col, color);
   }
-  function animate() {
+  function animate(time) {
     requestAnimationFrame( animate );
+    TWEEN.update(time);
     __renderer.render( __scene, __camera );
   }
   _this.init(container);

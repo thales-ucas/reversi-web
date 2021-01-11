@@ -35,7 +35,6 @@ export default {
       this.__reversi.click(e.x - this.$refs['game'].offsetLeft, e.y - this.$refs['game'].offsetTop);
     },
     onGameStep(e) {
-      console.log(e);
       this.black = e.data.black;
       this.white = e.data.white;
     }
