@@ -32,7 +32,6 @@ const main = function(container){
   let _raycaster = null, // 射线
     _engine = null, // 游戏引擎
     _ai = null, // 电脑玩家
-    _running = false, // 游戏运行中
     _enable = false; // 激活状态
   var __stats = null;	//fps
   /**
@@ -84,9 +83,12 @@ const main = function(container){
    * 游戏开始
    * @param {event} e 
    */
-  function onChessStart(e) {
-    console.log(e);
-    _running = true;
+  async function onChessStart(e) {
+    const arr = e.data;
+    for(const obj of arr) {
+      const { row, col, color } = obj;
+      await __board.move(row, col, color);
+    }
     _enable = true;
   }
   /**
@@ -94,20 +96,25 @@ const main = function(container){
    * @param {event} e 
    */
   function onChessMove(e) {
+    _enable = false;
     const { row, col, color, flips, count } = e.data;
     __board.move( row, col, color ).then(() => {
-      __board.flip(flips).then((arr) => {
+      __board.flip(flips).then(() => {
         const event = { type: EVENT.GAME_STEP, data: count};
         _this.dispatchEvent(event);
-    
+        if(color === Engine.CHESS.BLACK) {
+          _enable = false;
+          const arr = _engine.getLegal(_ai.getColor());
+          if(arr) {
+            _ai.think(arr);
+          } else {
+            _enable = true;
+          }
+        } else if(color === Engine.CHESS.WHITE) {
+          _enable = true;
+        } 
       });
     });
-    if(_running && color === Engine.CHESS.BLACK) {
-      _enable = false;
-      _ai.think(_engine.getLegal(_ai.getColor()));
-    } else if(_running && color === Engine.CHESS.WHITE) {
-      _enable = true;
-    }
   }
   /**
    * 电脑走棋

@@ -29,15 +29,18 @@ const Engine = function(){
    * 开始游戏
    */
   _this.start = () => {
-    _this.move(3, 4, Engine.CHESS.BLACK, true);
-    _this.move(3, 3, Engine.CHESS.WHITE, true);
-    _this.move(4, 3, Engine.CHESS.BLACK, true);
-    _this.move(4, 4, Engine.CHESS.WHITE, true);
+    const arr = [];
+    arr.push({row: 3, col: 4, color: Engine.CHESS.BLACK});
+    arr.push({row: 3, col: 3, color: Engine.CHESS.WHITE});
+    arr.push({row: 4, col: 3, color: Engine.CHESS.BLACK});
+    arr.push({row: 4, col: 4, color: Engine.CHESS.WHITE});
+    for(const obj of arr) {
+      const { row, col, color } = obj;
+      _data[row][col] = color;
+    }
     _action = Engine.CHESS.BLACK;
-    const e = { type: Engine.EVENT.START, data: _action };
+    const e = { type: Engine.EVENT.START, data: arr };
     _this.dispatchEvent(e);
-    // const arr = getLegal(Engine.CHESS.BLACK);
-    // console.log(arr);
   };
   /**
    * 获取数据
@@ -50,19 +53,15 @@ const Engine = function(){
    * @param {int} row 行
    * @param {int} col 列
    * @param {int} color 棋子颜色
-   * @param {Boolean} force 强行
    */
-  _this.move = (row, col, color, force) => {
-    let flips = false;
-    if ( !force ) {
-      flips = getFilp(row, col, color);
-      if(flips) {
-        for(const obj of flips) {
-          _data[obj.row][obj.col] = color;
-        }
-      } else {
-        return;
+  _this.move = (row, col, color) => {
+    let flips  = getFilp(row, col, color);
+    if(flips) {
+      for(const obj of flips) {
+        _data[obj.row][obj.col] = color;
       }
+    } else {
+      return;
     }
     _data[row][col] = color;
     const count = getCount();
@@ -126,7 +125,8 @@ const Engine = function(){
             const [ dx, dy ] = coord;
             let x = parseInt(n) + dx;
             let y = parseInt(m) + dy;
-            if(isValid(y, x) && _data[y][x]=== Engine.CHESS.NONE && nears.indexOf([x, y]) === -1) {
+            if(isValid(y, x) && _data[y][x]=== Engine.CHESS.NONE
+            && nears.findIndex(k => k[0] === x && k[1] === y) === -1) {
               nears.push([x, y]);
             }
           }
