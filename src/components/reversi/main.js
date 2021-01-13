@@ -31,6 +31,8 @@ const main = function(container){
     __board = null;	//棋盘
   let _raycaster = null, // 射线
     _engine = null, // 游戏引擎
+    _situation = {}, // 对阵局势
+    _operantPlayer = null, //操作者
     _ai = null, // 电脑玩家
     _enable = false; // 激活状态
   var __stats = null;	//fps
@@ -51,8 +53,6 @@ const main = function(container){
     _engine = new Engine();
     _engine.addEventListener( Engine.EVENT.START, onChessStart );
     _engine.addEventListener( Engine.EVENT.MOVE, onChessMove );
-    _ai = new AIPlayer();
-    _ai.addEventListener( AIPlayer.EVENT.MOVE, onAIMove );
     __board = new Board();
     __board.pave(_engine.getData());
     __scene.add( __board );
@@ -60,6 +60,11 @@ const main = function(container){
     animate(0);
   };
   _this.start = () => {
+    _ai = new AIPlayer();
+    _ai.addEventListener( AIPlayer.EVENT.MOVE, onAIMove );
+    _situation[Engine.CHESS.BLACK] = 'player';
+    _situation[Engine.CHESS.WHITE] = 'ai';
+    _operantPlayer = Engine.CHESS.BLACK;
     _engine.start();
   };
   /**
@@ -76,9 +81,25 @@ const main = function(container){
     const ret = __board.hit(_raycaster); // 射线触碰决定用户点击的位置
     if (ret) { // 玩家走棋
       const { row, col } = ret.object;
-      _engine.move(row, col, Engine.CHESS.BLACK);
+      _engine.move(row, col, _operantPlayer);
     }
   };
+  /**
+   * 交换操作者
+   */
+  function switchOperantPlayer() {
+    _operantPlayer = _operantPlayer === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
+    const arr = _engine.getLegal(_operantPlayer);
+    if(arr) {
+      if (_situation[_operantPlayer] === "player") {
+        _enable = true;
+      } else if (_situation[_operantPlayer] === "ai") {
+        _ai.think(arr);
+      }
+    } else {
+      switchOperantPlayer();
+    }
+  }
   /**
    * 游戏开始
    * @param {event} e 
@@ -102,17 +123,7 @@ const main = function(container){
       __board.flip(flips).then(() => {
         const event = { type: EVENT.GAME_STEP, data: count};
         _this.dispatchEvent(event);
-        if(color === Engine.CHESS.BLACK) {
-          _enable = false;
-          const arr = _engine.getLegal(_ai.getColor());
-          if(arr) {
-            _ai.think(arr);
-          } else {
-            _enable = true;
-          }
-        } else if(color === Engine.CHESS.WHITE) {
-          _enable = true;
-        } 
+        switchOperantPlayer();
       });
     });
   }
