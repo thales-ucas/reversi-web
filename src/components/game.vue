@@ -1,12 +1,43 @@
 <template>
   <div class="game">
-    <div>Reversi</div>
-    <div><canvas ref="game" width="500" height="500" @click="onGameClick"></canvas></div>
+    <div>
+      <p>苹果棋</p>
+      <p>Reversi</p>
+    </div>
+    <div><canvas ref="game" width="500" height="500" style="width:100%" @click="onGameClick"></canvas></div>
     <div>
       <ul>
         <li><span>黑棋:</span><span>{{black}}</span></li>
         <li><span>白棋:</span><span>{{white}}</span></li>
       </ul>
+    </div>
+    <div>
+      {{msg}}
+    </div>
+    <div v-show="isStartPanelShow" class="start-panel">
+      <div class="start-wrap">
+        <p>
+          <label>
+            <input type="radio" name="difficulty" v-model="difficulty" value="0" /> 初级
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="difficulty" v-model="difficulty" value="1" /> 中级
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="difficulty" v-model="difficulty" value="2" /> alphaGo
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="difficulty" v-model="difficulty" value="10" /> 双人对战
+          </label>
+        </p>
+        <button @click="onGameStart">开始游戏</button>
+      </div>
     </div>
   </div>
 </template>
@@ -15,11 +46,11 @@
 import * as Reversi from "./reversi/main";
 export default {
   name: 'Game',
-  props: {
-    msg: String
-  },
   data() {
     return {
+      isStartPanelShow: true,
+      difficulty: 0,
+      msg: "",
       black: 0,
       white: 0
     };
@@ -28,11 +59,25 @@ export default {
   mounted() {
     this.__reversi = new Reversi.main(this.$refs['game']);
     this.__reversi.addEventListener(Reversi.EVENT.GAME_STEP, this.onGameStep);
-    this.__reversi.start();
+    this.__reversi.addEventListener(Reversi.EVENT.GAME_OVER, this.onGameOver);
   },
   methods: {
     onGameClick(e) {
-      this.__reversi.click(e.x - this.$refs['game'].offsetLeft, e.y - this.$refs['game'].offsetTop);
+      this.__reversi.click(e);
+    },
+    onGameStart(e) {
+      this.isStartPanelShow = false;
+      this.__reversi.start(this.difficulty);
+    },
+    onGameOver(e) {
+      const { black, white, space } = e.data;
+      if (black > white) {
+        this.msg = "黑棋胜";
+      } else if (white > black) {
+        this.msg = "白棋胜";
+      } else {
+        this.msg = "平局";
+      }
     },
     onGameStep(e) {
       this.black = e.data.black;
@@ -57,5 +102,20 @@ li {
 }
 a {
   color: #42b983;
+}
+.start-panel {
+  width: 5rem;
+  position: absolute;
+  left: 1.25rem;
+  top: 1.75rem;
+  z-index: 1;
+  border-radius: 0.1rem;
+  background-color: white;
+}
+.start-panel .start-wrap {
+  margin: 0.3rem 1.5rem 0.7rem;
+}
+.start-panel .start-wrap p {
+  text-align: left;
 }
 </style>

@@ -39,7 +39,11 @@ const Engine = function(){
       _data[row][col] = color;
     }
     _action = Engine.CHESS.BLACK;
-    const e = { type: Engine.EVENT.START, data: arr };
+    const data = {
+      moves: arr,
+      count: getCount()
+    };
+    const e = { type: Engine.EVENT.START, data };
     _this.dispatchEvent(e);
   };
   /**
@@ -69,6 +73,12 @@ const Engine = function(){
     const e = { type: Engine.EVENT.MOVE, data };
     _this.dispatchEvent(e);
   };
+  /**
+   * 获得可以翻的棋
+   * @param {int} row 行
+   * @param {int} col 列
+   * @param {int} color 颜色
+   */
   function getFilp(row, col, color) {
     if (_data[row][col] !== 0) {
       return false;
@@ -155,7 +165,8 @@ const Engine = function(){
   function getCount() {
     const counter = {
       black: 0,
-      white: 0
+      white: 0,
+      space: 0
     };
     for(const row of _data) {
       for(const col of row) {
@@ -163,6 +174,8 @@ const Engine = function(){
           counter.black++;
         } else if(col === Engine.CHESS.WHITE) {
           counter.white++;
+        } else {
+          counter.space++;
         }
       }
     }

@@ -6,6 +6,7 @@ import Engine from './engine';
  */
 const Piece = function(param) {
   const _this = this;
+  let _color = null;
 	/**
 	 *	初始化
 	 */
@@ -17,7 +18,8 @@ const Piece = function(param) {
       new MeshBasicMaterial( { color: "white" } )
     ];
     Mesh.call(_this, geometry, materials);
-    if(color == Engine.CHESS.WHITE) {
+    _color = parseInt(color);
+    if(_color == Engine.CHESS.WHITE) {
       _this.rotation.x = Math.PI;
     }
   };
@@ -40,6 +42,7 @@ const Piece = function(param) {
   _this.flip = (delay = 0) => {
     return new Promise((resolve) => {
       let rotation = { x: 0 };
+      _color = _color == Engine.CHESS.WHITE ? Engine.CHESS.BLACK : Engine.CHESS.WHITE;
       const initX = _this.rotation.x;
       let coord = { y: 0 };
       const up = new Tween(coord).to({y: 10}, 300).onUpdate((e) => {_this.position.y = e.y;});
