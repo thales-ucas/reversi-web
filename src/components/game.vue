@@ -59,7 +59,7 @@ export default {
     return {
       isStartPanelShow: true,
       difficulty: 0,
-      msg: "1",
+      msg: "",
       timeGlobal: 0,
       timeLocal: 0,
       player: 0,
