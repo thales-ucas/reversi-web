@@ -2,16 +2,25 @@ import { EventDispatcher } from 'three';
 /**
  *	引擎
  */
-const Engine = function(){
+const Engine = function(param) {
   const _this = this;
   let _data = null; // 棋盘数据
-  let _action = null; // 行动方
+  let _current = null; // 行动者
   /**
    *	初始化
    */
-  _this.init = function() {
-    _this.reset();
+  _this.init = function(data) {
+    if (data) {
+      _data = data;
+    } else {
+      _this.reset();
+    }
   };
+  /**
+   * 克隆
+   * @returns {Engine} 新的引擎
+   */
+  _this.clone = () => new Engine(_data);
   /**
    * 复位
    */
@@ -38,7 +47,7 @@ const Engine = function(){
       const { row, col, color } = obj;
       _data[row][col] = color;
     }
-    _action = Engine.CHESS.BLACK;
+    shiftPlayer();
     const data = {
       moves: arr,
       count: getCount()
@@ -53,12 +62,43 @@ const Engine = function(){
     return _data;
   };
   /**
+   * 换下一个颜色下棋
+   */
+  function shiftPlayer() {
+    if(!_current) {
+      _current = Engine.CHESS.BLACK;
+    } else {
+      _current = _current === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
+    }
+    const legal = _this.getLegal(_current);
+    if(legal.length === 0) return shiftPlayer();
+    return _current;
+  }
+  /**
+   * 获得当前旗手
+   */
+  _this.getPlayer = () => _current;
+  /**
+   * 游戏检测
+   * @returns {boolean} 是否继续进行
+   */
+  function isGameOver() {
+    const count = getCount();
+    if (count.space === 0 || count.black === 0 || count.white === 0) {
+      const event = { type: Engine.GAME_OVER, data: count};
+      _this.dispatchEvent(event);
+      return true;
+    } else {
+      return false;
+    }
+  }
+  /**
    * 走棋
    * @param {int} row 行
    * @param {int} col 列
-   * @param {int} color 棋子颜色
    */
-  _this.move = (row, col, color) => {
+  _this.move = (row, col) => {
+    const color = _current;
     let flips  = getFilp(row, col, color);
     if(flips) {
       for(const obj of flips) {
@@ -71,7 +111,9 @@ const Engine = function(){
     const count = getCount();
     const data = { row, col, color, flips, count };
     const e = { type: Engine.EVENT.MOVE, data };
-    _this.dispatchEvent(e);
+    _this.dispatchEvent(e); // 走棋
+    if(isGameOver()) return;
+    shiftPlayer();
   };
   /**
    * 获得可以翻的棋
@@ -111,9 +153,6 @@ const Engine = function(){
           if (y == parseInt(row) && x == parseInt(col)) break;
           arr.push({col:x, row:y});
         }
-        // for(x -= xdirection, y -= ydirection;x !== parseInt(col) && y !== parseInt(row);x -= xdirection,y -= ydirection) {
-        //   arr.push({col:x, row:y});
-        // }
       }
     }
     _data[row][col] = 0;
@@ -181,7 +220,7 @@ const Engine = function(){
     }
     return counter;
   }
-  _this.init();
+  _this.init(param);
 };
 Engine.ROW = 8;
 Engine.COL = 8;
@@ -191,10 +230,11 @@ Engine.CHESS = {
   WHITE: 2
 };
 Engine.EVENT = {
-  START: "gameStart",
-  GAME_OVER: "gameOver",
-  MOVE: "chessMove",
-  FLIP: "chessFlip"
+  START: "gameStart", // 游戏开始
+  GAME_OVER: "gameOver", // 游戏结束
+  MOVE: "chessMove", // 走棋
+  SHIFT: "playerShift", // 旗手交换
+  FLIP: "chessFlip" // 棋子翻转
 };
 
 Object.assign( Engine.prototype, EventDispatcher.prototype );

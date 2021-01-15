@@ -28,7 +28,7 @@
         </p>
         <p>
           <label>
-            <input type="radio" name="difficulty" v-model="difficulty" value="2" /> alphaGo
+            <input type="radio" name="difficulty" disabled v-model="difficulty" value="2" /> alphaGo
           </label>
         </p>
         <p>

@@ -40,7 +40,6 @@ const main = function(container){
   let _raycaster = null, // 射线
     _engine = null, // 游戏引擎
     _situation = {}, // 对阵局势
-    _operantPlayer = null, //操作者
     _ai = null, // 电脑玩家
     _enable = false; // 激活状态
   var __stats = null;	//fps
@@ -97,7 +96,6 @@ const main = function(container){
         _situation[Engine.CHESS.WHITE] = 'ai';
       }
       _situation[Engine.CHESS.BLACK] = 'player';
-      _operantPlayer = Engine.CHESS.BLACK;
       _engine.start();
     });
     t.start();
@@ -107,7 +105,7 @@ const main = function(container){
    * @param {event} e
    */
   _this.click = (e) => {
-    if (!_enable) return;
+    if (!_enable) return; // 允许玩家走时候才能操作
     const vec = new Vector2();
     const x = e.x - X;
     const y = e.y - Y;
@@ -117,23 +115,18 @@ const main = function(container){
     const ret = __board.hit(_raycaster); // 射线触碰决定用户点击的位置
     if (ret) { // 玩家走棋
       const { row, col } = ret.object;
-      _engine.move(row, col, _operantPlayer);
+      _engine.move(row, col);
     }
   };
   /**
    * 交换操作者
    */
-  function switchOperantPlayer() {
-    _operantPlayer = _operantPlayer === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
-    const arr = _engine.getLegal(_operantPlayer);
-    if(arr && arr.length > 0) {
-      if (_situation[_operantPlayer] === "player") {
-        _enable = true;
-      } else if (_situation[_operantPlayer] === "ai") {
-        _ai.think(arr);
-      }
-    } else {
-      switchOperantPlayer();
+  function shiftPlayer() {
+    const current = _engine.getPlayer();
+    if (_situation[current] === "player") {
+      _enable = true;
+    } else if (_situation[current] === "ai") {
+      _ai.think(_engine.getLegal(current));
     }
   }
   /**
@@ -175,9 +168,7 @@ const main = function(container){
       __board.flip(flips).then(() => {
         const event = { type: EVENT.GAME_STEP, data: count};
         _this.dispatchEvent(event);
-        if (checkGame(count)) {
-          switchOperantPlayer();
-        }
+        if(checkGame(count)) shiftPlayer(); // 交换棋手
       });
     });
   }
@@ -186,8 +177,8 @@ const main = function(container){
    * @param {event} e 
    */
   function onAIMove(e) {
-    const { row, col, color } = e.data;
-    _engine.move(row, col, color);
+    const { row, col } = e.data;
+    _engine.move(row, col);
   }
   function animate(time) {
     requestAnimationFrame( animate );
