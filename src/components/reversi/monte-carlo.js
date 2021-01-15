@@ -19,18 +19,30 @@ class Simulator {
     this.engine = engine;
   }
   run() {
-    let winner = null;
-    let diff = -1;
-    const legal = this.engine.getLegal(this.current.color);
+    let n = 0;
+    while(!this.engine.isGameOver()) {
+      this.shift();
+      const arr = this.engine.getLegal(this.current.color);
+      if(arr && arr.length > 0) {
+        const action = this.current.getMove(arr);
+        this.engine.move(action[1], action[0]);  
+      }
+      if(n >100)
+        break;
+      else
+        n++;
+    }
+    return this.engine.getResult();
   }
   /**
-   * 交换玩家
+   * 设置current玩家
    */
   shift() {
-    if(!this.current) {
+    const color = this.engine.getPlayer();
+    if(isNaN(color)) {
       this.current = this.black;
     } else {
-      this.current = this.current === this.black ? this.white : this.black;
+      this.current = color === Engine.CHESS.BLACK ? this.black : this.white;
     }
     return this.current;
   }
@@ -40,8 +52,23 @@ class Simulator {
  * @param {int} color 颜色
  */
 class SimulatePlayer {
-  constructor(color) {
+  /**
+   * 
+   * @param {enum} color 颜色
+   * @param {enum} type 类型
+   */
+  constructor(color, type) {
     this.color = color;
+    this.type = type;
+    this.roxnane = new Roxanne();
+  }
+  /**
+   * 走棋
+   * @param {Array} arr 可以走的位置
+   * @returns 走棋步骤[col, row]
+   */
+  getMove(arr) {
+    return this.roxnane.select(arr);
   }
 }
 /**
@@ -64,6 +91,12 @@ class TreeNode {
   setMove(move) {
     this.row = move[1];
     this.col = move[0];
+  }
+  /**
+   * 获得走棋步骤
+   */
+  getMove() {
+    return [this.col, this.row];
   }
   /**
    * 添加节点，去重
@@ -92,28 +125,35 @@ class MonteCarlo {
    * 运行
    * @param {Engine} engine 引擎
    */
-  mcts(engine) {
+  run(engine) {
+    this.tick = new Date().getTime();
     const root = new TreeNode(null, this.color);
-    while(new Date().getTime() - this.tick < this.expire - 1) {
-      const simulateEngine = engine.clone();
-      const choice = this.select(root, simulateEngine);
-      this.expand(choice, simulateEngine);
-      const res = this.simulate(choice, simulateEngine);
-      let backScore = [1, 0, 0.5][res.winner];
-      if (choice.color === Engine.CHESS.BLACK) {
-        backScore = 1 - backScore;
-      }
-      this.backProp(choice, backScore);
-    }
-    let bestN = -1;
-    let bestMove = null;
-    for(const k in root.children) {
-      if(root.children[k].n > bestN) {
-        bestN = root.children[k].n;
-        bestMove = k;
-      }
-    }
-    return bestMove;
+    return new Promise((resolve, reject) => {
+      const sid = setInterval(() => {
+        const simulateEngine = engine.clone();
+        const choice = this.select(root, simulateEngine);
+        this.expand(choice, simulateEngine);
+        const {winner} = this.simulate(choice, simulateEngine);
+        let backScore = [0.5, 1, 0][winner];
+        if (choice.color === Engine.CHESS.BLACK) {
+          backScore = 1 - backScore;
+        }
+        this.backProp(choice, backScore);
+        if(new Date().getTime() - this.tick > this.expire - 1) {
+          clearInterval(sid);
+          let bestN = -1;
+          let bestMove = null;
+          for(const k in root.children) {
+            if(root.children[k].n > bestN) {
+              bestN = root.children[k].n;
+              bestMove = root.children[k].getMove();
+            }
+          }      
+          resolve(bestMove);
+        }
+      }, 1);
+  
+    });
   }
   /**
    * 蒙特卡洛树搜索，节点选择
@@ -177,7 +217,7 @@ class MonteCarlo {
     node.n += 1;
     node.w += score;
     if (node.parent) {
-      this.back_prop(node.parent, 1 - score);
+      this.backProp(node.parent, 1 - score);
     } 
   }
   /**

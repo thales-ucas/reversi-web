@@ -23,6 +23,12 @@ const Board = function() {
     _this.add(__bg, __chess);
   };
   /**
+   * 重置
+   */
+  _this.reset = () => {
+    __chess.clear();
+  };
+  /**
    * 触碰
    * @param {raycaster} raycaster 射线
    */

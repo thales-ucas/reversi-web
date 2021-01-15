@@ -1,4 +1,4 @@
-import { WebGLRenderer, EventDispatcher, PerspectiveCamera, Scene, Color, Raycaster, Vector2, Vector3 } from 'three';
+import { WebGLRenderer, EventDispatcher, PerspectiveCamera, Scene, Color, Raycaster, Vector2, Vector3, Clock } from 'three';
 import TWEEN, { Tween } from '@tweenjs/tween.js';
 import Board from './board';
 import Engine from './engine';
@@ -12,8 +12,6 @@ const VER = "1.0";
  */
 const EVENT = {
   RUNNING:	"running",
-  MODEL_LOADED:	"modeLoaded",
-  PERSON_FAIL: "personFail",
   GAME_INIT: "gameInit",
   GAME_START:	"gameStart",
   GAME_STEP: "gameStep",
@@ -41,8 +39,9 @@ const main = function(container){
     _engine = null, // 游戏引擎
     _situation = {}, // 对阵局势
     _ai = null, // 电脑玩家
+    _clock = new Clock, // 时钟
+    _running = false, // 游戏运行中
     _enable = false; // 激活状态
-  var __stats = null;	//fps
   /**
    *	初始化
    */
@@ -57,6 +56,7 @@ const main = function(container){
     _raycaster = new Raycaster();
     _engine = new Engine();
     _engine.addEventListener( Engine.EVENT.START, onChessStart );
+    _engine.addEventListener( Engine.EVENT.GAME_OVER, onGameOver );
     _engine.addEventListener( Engine.EVENT.MOVE, onChessMove );
     __board = new Board();
     __board.pave(_engine.getData());
@@ -65,12 +65,25 @@ const main = function(container){
     window.addEventListener("resize", onResize);
     animate(0);
   };
+  /**
+   * 尺寸重置
+   */
   function onResize() {
     X = _canvas.offsetLeft;
     Y = _canvas.offsetTop;
     WIDTH = _canvas.clientWidth;
     HEIGHT = _canvas.clientHeight;
   }
+  /**
+   * 重置
+   */
+  _this.reset = () => {
+    _engine.reset();
+    __board.reset();
+    _enable = false;
+    _running = false;
+    TWEEN.removeAll();
+  };
   /**
    * 游戏开始
    * @param {int} level 电脑等级
@@ -126,7 +139,7 @@ const main = function(container){
     if (_situation[current] === "player") {
       _enable = true;
     } else if (_situation[current] === "ai") {
-      _ai.think(_engine.getLegal(current));
+      _ai.think(_engine);
     }
   }
   /**
@@ -135,27 +148,34 @@ const main = function(container){
    */
   async function onChessStart(e) {
     const { count, moves } = e.data;
+    const start = new Date().getTime();
     for(const obj of moves) {
       const { row, col, color } = obj;
       await __board.move(row, col, color);
     }
     _enable = true;
+    _running = true;
+    _clock.start();
+    count.player = _engine.getPlayer();
     const event = { type: EVENT.GAME_STEP, data: count};
     _this.dispatchEvent(event);
+  }
+  /**
+   * 游戏结束
+   * @param {event} e 
+   */
+  function onGameOver(e) {
+    _running = false;
+    _clock.stop();
   }
   /**
    * 游戏检测
    * @param {object} count 统计信息
    * @returns {boolean} 是否继续进行
    */
-  function checkGame(count) {
-    if (count.space === 0 || count.black === 0 || count.white === 0) {
-      const event = { type: EVENT.GAME_OVER, data: count};
-      _this.dispatchEvent(event);
-      return false;
-    } else {
-      return true;
-    }
+  function gameOver(count) {
+    const event = { type: EVENT.GAME_OVER, data: count};
+    _this.dispatchEvent(event);
   }
   /**
    * 走棋
@@ -166,9 +186,14 @@ const main = function(container){
     const { row, col, color, flips, count } = e.data;
     __board.move( row, col, color ).then(() => {
       __board.flip(flips).then(() => {
+        count.player = _engine.getPlayer();
         const event = { type: EVENT.GAME_STEP, data: count};
         _this.dispatchEvent(event);
-        if(checkGame(count)) shiftPlayer(); // 交换棋手
+        if(_running) {
+          shiftPlayer(); // 交换棋手
+        } else {
+          gameOver(count);
+        }
       });
     });
   }
@@ -182,6 +207,10 @@ const main = function(container){
   }
   function animate(time) {
     requestAnimationFrame( animate );
+    if(_running) {
+      const event = { type: EVENT.RUNNING, data: _clock.getElapsedTime()};
+      _this.dispatchEvent(event);
+    }
     TWEEN.update(time);
     __renderer.render( __scene, __camera );
   }

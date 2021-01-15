@@ -12,7 +12,16 @@
       </ul>
     </div>
     <div>
-      {{msg}}
+      总用时：{{timeGlobal}}
+    </div>
+    <div>
+      <span v-if="player===1">黑棋思考中……</span>
+      <span v-else-if="player===2">白棋思考中……</span>
+      <span>{{timeLocal}}秒</span>
+    </div>
+    <div v-if="msg">
+      <p>{{msg}}</p>
+      <p><button @click="onGameRestart">再玩一次</button></p>
     </div>
     <div v-show="isStartPanelShow" class="start-panel">
       <div class="start-wrap">
@@ -28,7 +37,7 @@
         </p>
         <p>
           <label>
-            <input type="radio" name="difficulty" disabled v-model="difficulty" value="2" /> alphaGo
+            <input type="radio" name="difficulty" v-model="difficulty" value="2" /> 高级
           </label>
         </p>
         <p>
@@ -50,15 +59,21 @@ export default {
     return {
       isStartPanelShow: true,
       difficulty: 0,
-      msg: "",
+      msg: "1",
+      timeGlobal: 0,
+      timeLocal: 0,
+      player: 0,
       black: 0,
       white: 0
     };
   },
+  _time: 0,
+  _count: 0,
   __reversi: null,
   mounted() {
     this.__reversi = new Reversi.main(this.$refs['game']);
     this.__reversi.addEventListener(Reversi.EVENT.GAME_STEP, this.onGameStep);
+    this.__reversi.addEventListener(Reversi.EVENT.RUNNING, this.onGameRunning);
     this.__reversi.addEventListener(Reversi.EVENT.GAME_OVER, this.onGameOver);
   },
   methods: {
@@ -68,6 +83,12 @@ export default {
     onGameStart(e) {
       this.isStartPanelShow = false;
       this.__reversi.start(this.difficulty);
+      this._count = this._time || 0;
+    },
+    onGameRestart(e) {
+      this.__reversi.reset();
+      this.isStartPanelShow = true;
+      this.msg = "";
     },
     onGameOver(e) {
       const { black, white, space } = e.data;
@@ -79,9 +100,21 @@ export default {
         this.msg = "平局";
       }
     },
+    onGameRunning(e) {
+      const time = e.data;
+      this._time = time;
+      const hour = Math.floor(time / (60 * 60));
+      const minute = Math.floor((time / 60) % 60);
+      const second = Math.floor(time % 60);
+      this.timeGlobal = `${hour}小时 ${minute}分 ${second}秒`;
+      this.timeLocal = Math.floor(this._time - this._count);
+      if(this.timeLocal < 0) this.timeLocal = 0;
+    },
     onGameStep(e) {
+      this._count = this._time || 0;
       this.black = e.data.black;
       this.white = e.data.white;
+      this.player = e.data.player;
     }
   }
 };

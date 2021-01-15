@@ -11,7 +11,14 @@ const Engine = function(param) {
    */
   _this.init = function(data) {
     if (data) {
-      _data = data;
+      _data = [];
+      for(let m = 0; m < Engine.ROW; m++) {
+        const arr = [];
+        for(let n = 0; n < Engine.COL; n++) {
+          arr.push(data[m][n]);
+        }
+        _data.push(arr);
+      }
     } else {
       _this.reset();
     }
@@ -33,6 +40,7 @@ const Engine = function(param) {
       }
       _data.push(arr);
     }
+    _current = null;
   };
   /**
    * 开始游戏
@@ -70,28 +78,44 @@ const Engine = function(param) {
     } else {
       _current = _current === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
     }
+    const e = { type: Engine.EVENT.SHIFT, data: _current };
+    _this.dispatchEvent(e);
     const legal = _this.getLegal(_current);
     if(legal.length === 0) return shiftPlayer();
     return _current;
   }
   /**
-   * 获得当前旗手
+   * 获得当前棋手
    */
   _this.getPlayer = () => _current;
+  /**
+   * 获取结果
+   */
+  _this.getResult = () => {
+    const count = getCount();
+    const diff = count.black - count.white;
+    let winner = Engine.WINNER.DRAW;
+    if(diff > 0) {
+      winner = Engine.WINNER.BLACK;
+    } else if(diff < 0) {
+      winner = Engine.WINNER.WHITE;
+    }
+    return { count, winner, diff };
+  };
   /**
    * 游戏检测
    * @returns {boolean} 是否继续进行
    */
-  function isGameOver() {
+  _this.isGameOver = () => {
     const count = getCount();
     if (count.space === 0 || count.black === 0 || count.white === 0) {
-      const event = { type: Engine.GAME_OVER, data: count};
+      const event = { type: Engine.EVENT.GAME_OVER, data: count};
       _this.dispatchEvent(event);
       return true;
     } else {
       return false;
     }
-  }
+  };
   /**
    * 走棋
    * @param {int} row 行
@@ -112,7 +136,7 @@ const Engine = function(param) {
     const data = { row, col, color, flips, count };
     const e = { type: Engine.EVENT.MOVE, data };
     _this.dispatchEvent(e); // 走棋
-    if(isGameOver()) return;
+    if(_this.isGameOver()) return;
     shiftPlayer();
   };
   /**
@@ -164,6 +188,7 @@ const Engine = function(param) {
    * @param {emun} color 棋色
    */
   _this.getLegal = (color) => {
+    if(isNaN(color)) color = _current;
     const direction = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]];
     const opColor = color === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
     const nears = [];
@@ -226,6 +251,11 @@ Engine.ROW = 8;
 Engine.COL = 8;
 Engine.CHESS = {
   NONE: 0,
+  BLACK: 1,
+  WHITE: 2
+};
+Engine.WINNER = {
+  DRAW: 0,
   BLACK: 1,
   WHITE: 2
 };
