@@ -214,7 +214,46 @@ function move(row, col, color){
 ## 判断是否有可走的棋
 
 
-每次交换落子时候，需要先判断是否有可以落子的位置，如果没有就要交换对手落子
+每次交换落子时候，需要先判断是否有可以落子的位置
+
+
+```js
+/**
+ * 获取合法点
+ * @param {emun} color 棋色
+ */
+function getLegal(color) {
+  if(isNaN(color)) color = _current;
+  const direction = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]];
+  const opColor = color === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
+  const nears = [];
+  for(const m in _data) {
+    for(const n in _data[m]) {
+      if(_data[m][n] === opColor) { // 遍历所有对手棋子
+        for(const coord of direction) {
+          const [ dx, dy ] = coord;
+          let x = parseInt(n) + dx;
+          let y = parseInt(m) + dy;
+          if(isValid(y, x) && _data[y][x]=== Engine.CHESS.NONE // 找到对手棋子横纵斜八个方向没有任何落子的坐标
+          && nears.findIndex(k => k[0] === x && k[1] === y) === -1) { // 去除重复坐标
+            nears.push([x, y]);
+          }
+        }
+      }
+    }
+  }
+  const arr = [];
+  for(const coord of nears) {
+    if(getFilp(coord[1], coord[0], color)) { // 可以反转即存入数组
+      arr.push(coord);
+    }
+  }
+  return arr;
+}
+```
+
+
+如果没有可以反转对手棋子的位置，就要交换对手落子
 
 
 比如下面这种情况，白棋没有任何可以翻起的黑子，只能丧失一次落子机会，继续让黑棋落子

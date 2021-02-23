@@ -190,13 +190,13 @@ const Engine = function(param) {
     const nears = [];
     for(const m in _data) {
       for(const n in _data[m]) {
-        if(_data[m][n] === opColor) {
+        if(_data[m][n] === opColor) { // 遍历所有对手棋子
           for(const coord of direction) {
             const [ dx, dy ] = coord;
             let x = parseInt(n) + dx;
             let y = parseInt(m) + dy;
-            if(isValid(y, x) && _data[y][x]=== Engine.CHESS.NONE
-            && nears.findIndex(k => k[0] === x && k[1] === y) === -1) {
+            if(isValid(y, x) && _data[y][x]=== Engine.CHESS.NONE // 找到对手棋子横纵斜八个方向没有任何落子的坐标
+            && nears.findIndex(k => k[0] === x && k[1] === y) === -1) { // 去除重复坐标
               nears.push([x, y]);
             }
           }
@@ -205,7 +205,7 @@ const Engine = function(param) {
     }
     const arr = [];
     for(const coord of nears) {
-      if(getFilp(coord[1], coord[0], color)) {
+      if(getFilp(coord[1], coord[0], color)) { // 可以反转即存入数组
         arr.push(coord);
       }
     }
