@@ -124,18 +124,18 @@ const Engine = function(param) {
   _this.move = (row, col) => {
     const color = _current;
     let flips  = getFilp(row, col, color);
-    if(flips) {
+    if(flips) { // 有可以反转的地方棋子才可落子
       for(const obj of flips) {
         _data[obj.row][obj.col] = color;
       }
     } else {
       return;
     }
-    _data[row][col] = color;
+    _data[row][col] = color; // 落子
     const count = getCount();
     const data = { row, col, color, flips, count };
     const e = { type: Engine.EVENT.MOVE, data };
-    _this.dispatchEvent(e); // 走棋
+    _this.dispatchEvent(e); // 走棋事件
     if(_this.isGameOver()) return;
     shiftPlayer();
   };
@@ -144,42 +144,38 @@ const Engine = function(param) {
    * @param {int} row 行
    * @param {int} col 列
    * @param {int} color 颜色
+   * @returns {Array} 可反转的位置
    */
   function getFilp(row, col, color) {
-    if (_data[row][col] !== 0) {
+    if (_data[row][col] !== 0) { // 所在位置必须可以落子
       return false;
     }
-    if (!isValid(col, row)) {
+    if (!isValid(col, row)) { // 坐标在棋盘上
       return false;
     }
-    _data[row][col] = color;
+    _data[row][col] = color; // 落子
     const arr = [];
-    const opColor = color === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK;
-    const direction = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]];
+    const opColor = color === Engine.CHESS.BLACK ? Engine.CHESS.WHITE : Engine.CHESS.BLACK; // 获取对手棋子颜色
+    const direction = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]; // 横纵斜8个方向
     for(const coord of direction) {
       const [ xdirection, ydirection ] = coord;
       let x = parseInt(col);
       let y = parseInt(row);
-      x += xdirection;
-      y += ydirection;
-      if(isValid(y, x) && _data[y][x] === opColor) {
-        do {
-          x += xdirection;
-          y += ydirection;  
-          if(!isValid(y, x)) break;
-        } while(_data[y][x] === opColor);
-      }
-      if(!isValid(y, x)) continue;
-      if(_data[y][x] === color) {
-        while (isValid(y, x)) {          
+      do {
+        x += xdirection;
+        y += ydirection;
+      } while(isValid(y, x) && _data[y][x] === opColor); // 横纵或者斜线一个方向一直找到不是对方颜色或者不在棋盘上
+      if(!isValid(y, x)) continue; // 超出棋盘直接跳出
+      if(_data[y][x] === color) { // 如果最后停止的颜色是自己的棋子颜色，过程中的对手棋子都为反转棋子
+        while (isValid(y, x)) {
           x -= xdirection;
           y -= ydirection;
-          if (y == parseInt(row) && x == parseInt(col)) break;
-          arr.push({col:x, row:y});
+          if (y == parseInt(row) && x == parseInt(col)) break; // 回到之前落子跳出
+          arr.push({col:x, row:y}); // 两子之间敌方棋子存入数组
         }
       }
     }
-    _data[row][col] = 0;
+    _data[row][col] = 0; // 还原落子之前状态，因为很多需要判断可以落子而不是直接落子
     if(arr.length === 0) return false;
     return arr;
   }
@@ -219,6 +215,7 @@ const Engine = function(param) {
    * 在棋盘上
    * @param {int} row 行
    * @param {int} col 列
+   * @returns {Boolean} 是否在棋盘上
    */
   function isValid( row, col ) {
     return (row >= 0 && row <= Engine.ROW - 1 && col >= 0 && col <= Engine.COL - 1);
@@ -250,9 +247,9 @@ const Engine = function(param) {
 Engine.ROW = 8;
 Engine.COL = 8;
 Engine.CHESS = {
-  NONE: 0,
-  BLACK: 1,
-  WHITE: 2
+  NONE: 0,  // 没有棋子
+  BLACK: 1, // 黑棋
+  WHITE: 2  // 白棋
 };
 Engine.WINNER = {
   DRAW: 0,
