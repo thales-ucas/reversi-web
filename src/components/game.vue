@@ -4,7 +4,7 @@
       <p>苹果棋</p>
       <p>Reversi</p>
     </div>
-    <div><canvas ref="game" width="500" height="500" style="width:100%" @click="onGameClick"></canvas></div>
+    <div><canvas ref="game" width="500" height="500" class="container" @click="onGameClick"></canvas></div>
     <div>
       <ul>
         <li><span>黑棋:</span><span>{{black}}</span></li>
@@ -135,6 +135,10 @@ li {
 }
 a {
   color: #42b983;
+}
+.container {
+  max-width:500px;
+  width:100%
 }
 .start-panel {
   width: 5rem;

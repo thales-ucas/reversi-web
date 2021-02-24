@@ -1,22 +1,23 @@
 import { Object3D } from 'three';
 import Square from './square';
 import Piece from './piece';
+import { Tween, Easing } from '@tweenjs/tween.js';
 
 /**
  *	棋盘
  */
 const Board = function() {
   const _this = this;
-  let __bg = null, // 背景
-    __chess = null; // 棋子
+  let __bg = null, // 背景层
+    __chess = null; // 棋子层
   _this.offset = { // 偏移位置
     row: 0,
     col: 0,
   };
-	/**
-	 *	初始化
-	 */
-	_this.init = () => {
+  /**
+   *	初始化
+    */
+  _this.init = () => {
     Object3D.call(_this);
     __bg = new Object3D();
     __chess = new Object3D();
@@ -41,7 +42,8 @@ const Board = function() {
     return ret;
   };
   /**
-   * 铺路
+   * 铺棋盘
+   * @param {Array} 棋盘二维数组
    */
   _this.pave = (data) => {
     __bg.clear();
@@ -59,6 +61,31 @@ const Board = function() {
     }
     __bg.position.set(-_this.offset.col, 0, -_this.offset.row);
     __chess.position.set(-_this.offset.col, Square.HEIGHT, -_this.offset.row);
+  };
+  _this.pave2 = (data) => {
+    __bg.clear();
+    _this.offset.row = data.length / 2 * Square.WIDTH - Square.WIDTH / 2;
+    _this.offset.col = _this.offset.row;
+    let d = 1;
+    for ( const m in data ) {
+      for ( const n in data[m] ) {
+        const square = new Square();
+        square.row = m;
+        square.col = n;
+        square.position.x = n * Square.WIDTH;
+        square.position.z = m * Square.WIDTH;
+        square.visible = false;
+        let coord = { y: 100 };
+        const t = new Tween(coord).to({y:0}, 500).easing(Easing.Quadratic.In);
+        t.onUpdate((e) => {square.position.y = e.y;});
+        t.onStart(e => {square.visible = true;});
+        t.delay(d * 100);
+        t.start();
+        __bg.add(square);
+        d++;
+      }
+    }
+    __bg.position.set(-_this.offset.col, 0, -_this.offset.row);
   };
   /**
    * 走棋

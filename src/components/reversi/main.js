@@ -1,8 +1,11 @@
 import { WebGLRenderer, EventDispatcher, PerspectiveCamera, Scene, Color, Raycaster, Vector2, Vector3, Clock } from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import TWEEN, { Tween } from '@tweenjs/tween.js';
 import Board from './board';
 import Engine from './engine';
 import AIPlayer from './ai-player';
+import Square from './square';
+import Piece from './piece';
 /**
  *	版本
  */
@@ -113,6 +116,13 @@ const main = function(container){
     });
     t.start();
   };
+  _this.test = () => {
+    __scene.clear();
+    const t = new Piece()
+    __scene.add( t );
+    const controls = new OrbitControls(__camera, __renderer.domElement);
+    controls.update();
+  }
   /**
    * 点击
    * @param {event} e
