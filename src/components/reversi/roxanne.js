@@ -4,7 +4,7 @@
  */
 class Roxanne {
   constructor() {
-    this._table = [
+    this._table = [ // 优先级
       [ [0, 0], [0, 7], [7, 0], [7, 7] ],
       [ [2, 2], [2, 5], [5, 2], [5, 5] ],
       [ [3, 2], [3, 5], [4, 2], [4, 5], [2, 3], [2, 4], [5, 3], [5, 4] ],
@@ -18,10 +18,10 @@ class Roxanne {
   }
   select(arr) {
     if (arr && arr.length > 0) {
-      for(const moves of this._table) {
-        moves.sort(() => 0.5 - Math.random());
+      for(const moves of this._table) { // 按照优先级遍历所有策略
+        moves.sort(() => 0.5 - Math.random()); // 随机排列该等级策略
         for(const move of moves) {
-          if(arr.findIndex(n => n[0] === move[0] && n[1] === move[1]) > -1) {
+          if(arr.findIndex(n => n[0] === move[0] && n[1] === move[1]) > -1) { // 判断可下的位置是否在策略里
             return move;
           }
         }

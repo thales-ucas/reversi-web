@@ -1,8 +1,10 @@
 # 游戏引擎
 
 
-游戏使用js完成，这个游戏，我Python和js都开发过，感觉还是Python更友好，各种数组操作都非常容易
+游戏使用js完成，这个游戏，方便传阅
 
+
+我Python和js都开发过，感觉还是Python更友好，各种数组操作都非常容易，不过Python竟然没有dowhile​
 
 # 基本显示
 
@@ -285,3 +287,8 @@ function getLegal(color) {
 
 ![perfect](./assets/perfect.png)
 
+
+# 扩展
+
+
+很多游戏都是二维矩阵为基础开发的，比如连连看、对对碰、消灭星星、俄罗斯方块……
