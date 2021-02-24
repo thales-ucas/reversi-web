@@ -183,6 +183,9 @@ class Simulator {
 ## 蒙特卡洛算法
 
 
+![monte](./assets/monte.jpg)
+
+
 首先创建一个蒙特卡洛树
 
 
